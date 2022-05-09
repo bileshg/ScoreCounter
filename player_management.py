@@ -1,34 +1,13 @@
-import os.path
-import pickle
-
-
-PLAYERS_FILE = 'players.pkl'
-
-
-def get_players():
-    if os.path.exists(PLAYERS_FILE):
-        file = open(PLAYERS_FILE, 'rb')
-        players = pickle.load(file)
-        file.close()
-
-        return players
-    else:
-        return []
-
-
-def save_players(players):
-    file = open(PLAYERS_FILE, 'wb')
-    pickle.dump(players, file)
-    file.close()    
+from replit import db
 
 
 def add_player():
-    players = get_players()
+    players = db.get("players", [])
 
     name = input("\nEnter player's name: ")
     players.append(name)
 
-    save_players(players)
+    db["players"] = players
 
 
 def list_players_helper(players):
@@ -40,7 +19,7 @@ def list_players_helper(players):
 
 
 def list_players():
-    players = get_players()
+    players = db.get("players", [])
 
     if len(players) > 0:
         list_players_helper(players)
@@ -49,7 +28,7 @@ def list_players():
 
 
 def remove_player():
-    players = get_players()
+    players = db.get("players", [])
 
     if len(players) > 0:
         list_players_helper(players)
@@ -58,7 +37,7 @@ def remove_player():
             i = int(input("Player # to remove: ".rjust(22))) - 1
             players.remove(players[i])
             
-            save_players(players)
+            db["players"] = players
         except:
             print("\nPlease provide a valid input!")
     else:
@@ -66,7 +45,7 @@ def remove_player():
 
 
 def select_players():
-    players = get_players()
+    players = db.get("players", [])
     selected_players = []
 
     if len(players) > 0:
