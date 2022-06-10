@@ -25,7 +25,7 @@ def main():
         elif(choice[0] == '4'):
             pm.remove_player()
         elif(choice[0] == '5'):
-            pass
+            gm.list_old_games()
         elif(choice.upper()[0] == 'X'):
             print("\nBye!")
         else:

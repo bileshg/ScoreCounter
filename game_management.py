@@ -1,10 +1,6 @@
-import os.path
-import pickle
 from terminaltables import SingleTable
 import player_management as pm
-
-
-HISTORY_FILE = 'history.pkl'
+from replit import db
 
 
 class Game:
@@ -49,43 +45,42 @@ class Game:
         except:
             print("\nEnter valid scores!")
 
-    def get_highest_and_lowest_scorer(self):
+    def get_highest_and_lowest_scores(self):
         low_total = self.running_total[0]
-        low_index = 0        
         high_total = self.running_total[0]
-        high_index = 0
         for i in range(1, len(self.running_total)):
             total = self.running_total[i]
             if total < low_total:
                 low_total = total
-                low_index = i
             if total > high_total:
                 high_total = total
-                high_index = i
 
-        return low_total, low_index, high_total, high_index
+        return low_total, high_total
 
     def check_winner(self):
-        low_total, low_index, high_total, high_index = self.get_highest_and_lowest_scorer()
+        low_total, high_total = self.get_highest_and_lowest_scores()
 
         if len(self.rounds) == self.max_rounds or high_total >= self.max_score:
-            if self.highest_wins:
-                return self.players[high_index]
-            else:
-                return self.players[low_index]
+            score_to_check = high_total if self.highest_wins else low_total
+            winners = []
+            for i, total in enumerate(self.running_total):
+                if total == score_to_check:
+                    winners.append(self.players[i])
+            return winners
         else:
-            return None
+            return []
 
     def end_game(self):
         if len(self.rounds) > 0:
-            low_total, low_index, high_total, high_index = self.get_highest_and_lowest_scorer()
-    
-            if self.highest_wins:
-                return self.players[high_index]
-            else:
-                return self.players[low_index]
+            low_total, high_total = self.get_highest_and_lowest_scores()
+            score_to_check = high_total if self.highest_wins else low_total
+            winners = []
+            for i, total in enumerate(self.running_total):
+                if total == score_to_check:
+                    winners.append(self.players[i])
+            return winners
         else:
-            return None
+            return []
             
     def display(self):
         table = SingleTable(self.data_table, "Scorecard")
@@ -94,15 +89,27 @@ class Game:
         print("\n")
 
 
-def get_old_games():
-    if os.path.exists(HISTORY_FILE):
-        file = open(HISTORY_FILE, 'rb')
-        games = pickle.load(file)
-        file.close()
+def list_old_games_helper(games):
+    print("\n")
+    print("[History]".center(24, '-'))
+    for i, game in enumerate(games, start=1):
+        print(f"{i}. {game.name}")
+    print('-' * 24)
 
-        return games
+
+def list_old_games():
+    games = db.get("history", [])
+
+    if len(games) > 0:
+        list_old_games_helper(games)
+
+        try:
+            i = int(input("Game to view: ".rjust(22))) - 1
+            games[i].display()
+        except:
+            print("\nPlease provide a valid input!")
     else:
-        return []
+        print("\nNo players added yet!")
 
 
 def start_game():
@@ -126,21 +133,32 @@ def start_game():
         
                 if(choice[0] == '1'):
                     game.add_round()
-                    winner = game.check_winner()
-                    if winner is not None:
-                        print(f"{winner} is the winner!\n")
+                    winners = game.check_winner()
+                    if len(winners) == 0:                        
+                        print("\nThe game goes on...\n")
+                    else:                        
+                        save_game(game.name, game.data_table, winners)
+                        if len(winners) == 1:
+                            print("\n" + winners[0] + " was the winner of this game.")
+                        elif len(winners) == len(game.players):
+                            print("\nWinner undecided...")
+                        else:
+                            print('\n{}, and {} were the winners of this game.\n'.format(', '.join(winners[:-1]), winners[-1]))
                         choice = 'X'
                         continue
-                    else:
-                        print("\nThe game goes on...\n")
+                        
                 elif(choice[0] == '2'):
                     game.display()
+                
                 elif(choice.upper()[0] == 'X'):
-                    winner = game.end_game()
-                    if winner is not None:
-                        print(f"{winner} is the winner!")
+                    winners = game.end_game()
+                    save_game(game.name, game.data_table, winners)
+                    if len(winners) == 0 or len(winners) == len(game.players):                        
+                        print("\nWinner Undecided...\n")
+                    elif len(winners) == 1:
+                        print(winners[0] + " was the winner of this game.")
                     else:
-                        print("\nWinner undecided...")                
+                        print('{}, and {} were the winners of this game.'.format(', '.join(winners[:-1]), winners[-1]))
                 
         else:
             print("\nUnable to start a new game!")
@@ -154,7 +172,7 @@ def create_game():
         print("\n")
         print("[Configure]".center(32, '-'))
         name = input("Name: ")
-        highest_wins = input("Highest score wins? (y/n): ")
+        highest_wins = input("Who wins? (H - highest scorer, L - Lowest scorer): ")
         max_score = int(input("Maximum score: "))
         max_rounds = int(input("Maximum rounds: "))
         print('-' * 32)
@@ -163,4 +181,29 @@ def create_game():
         print("\nEnter valid values!")
         return None
 
-    return Game(name, highest_wins.upper()[0] == 'Y', max_score, max_rounds)
+    return Game(name, highest_wins.upper()[0] == 'H', max_score, max_rounds)
+
+
+class History:
+
+    def __init__(self, name, scorecard, winners):
+        self.name = name
+        self.scorecard = scorecard
+        self.winner = winners
+
+    def display(self):
+        print("Name: " + self.name)
+        table = SingleTable(self.scorecard, "Scorecard")
+        print("\n")
+        print(table.table)
+        print("\n")
+        if len(self.winners) == 1:
+            print(self.winner + " was the winner of this game.")
+        else:
+            print('{}, and {} were the winners of this game.'.format(', '.join(self.winners[:-1]), self.winners[-1]))
+
+
+def save_game(name, scorecard, winners):
+    games = db.get("history", [])
+    games.append(History(name, scorecard, winners))
+    db["history"] = games

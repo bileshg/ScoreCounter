@@ -36,7 +36,7 @@ def remove_player():
         try:
             i = int(input("Player # to remove: ".rjust(22))) - 1
             players.remove(players[i])
-            
+
             db["players"] = players
         except:
             print("\nPlease provide a valid input!")
@@ -51,11 +51,10 @@ def select_players():
     if len(players) > 0:
         list_players_helper(players)
 
-        
         try:
             n = int(input("# of players: ".rjust(22)))
 
-            if(len(players) < n):
+            if (len(players) < n):
                 print(f"Only {len(players)} added!")
                 return []
 
@@ -75,4 +74,3 @@ def select_players():
         print("\nNo players added yet!")
 
     return selected_players
-    
