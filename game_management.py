@@ -1,6 +1,8 @@
 from terminaltables import SingleTable
 import player_management as pm
 from replit import db
+import uuid
+import json
 
 
 class Game:
@@ -92,20 +94,21 @@ class Game:
 def list_old_games_helper(games):
     print("\n")
     print("[History]".center(24, '-'))
-    for i, game in enumerate(games, start=1):
-        print(f"{i}. {game.name}")
+    for i, game_id in enumerate(games, start=1):
+        game_json = json.loads(db[game_id])
+        print(f"{i}. {game_json['name']}")
     print('-' * 24)
 
 
 def list_old_games():
-    games = db.get("history", [])
+    games = db.prefix("GM-")
 
     if len(games) > 0:
         list_old_games_helper(games)
 
         try:
             i = int(input("Game to view: ".rjust(22))) - 1
-            games[i].display()
+            display_old_game(db[games[i]])
         except:
             print("\nPlease provide a valid input!")
     else:
@@ -184,26 +187,23 @@ def create_game():
     return Game(name, highest_wins.upper()[0] == 'H', max_score, max_rounds)
 
 
-class History:
-
-    def __init__(self, name, scorecard, winners):
-        self.name = name
-        self.scorecard = scorecard
-        self.winner = winners
-
-    def display(self):
-        print("Name: " + self.name)
-        table = SingleTable(self.scorecard, "Scorecard")
-        print("\n")
-        print(table.table)
-        print("\n")
-        if len(self.winners) == 1:
-            print(self.winner + " was the winner of this game.")
-        else:
-            print('{}, and {} were the winners of this game.'.format(', '.join(self.winners[:-1]), self.winners[-1]))
+def display_old_game(game_json_string):
+    game = json.loads(game_json_string)
+    print("Name: " + game['name'])
+    table = SingleTable(game['scorecard'], "Scorecard")
+    print("\n")
+    print(table.table)
+    print("\n")
+    if len(game['winners']) == 1:
+        print(game['winners'][0] + " was the winner of this game.")
+    else:
+        print('{}, and {} were the winners of this game.'.format(', '.join(game['winners'][:-1]), game['winners'][-1]))
 
 
 def save_game(name, scorecard, winners):
-    games = db.get("history", [])
-    games.append(History(name, scorecard, winners))
-    db["history"] = games
+    game_to_save = {
+        "name": name,
+        "scorecard": scorecard,
+        "winners": winners
+    }
+    db[f'GM-{uuid.uuid1()}'] = json.dumps(game_to_save)
