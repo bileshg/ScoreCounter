@@ -46,6 +46,7 @@ def remove_player():
 
 def select_players():
     players = db.get("players", [])
+
     selected_players = []
 
     if len(players) > 0:

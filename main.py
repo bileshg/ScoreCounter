@@ -16,17 +16,17 @@ def main():
 
         choice = input("Your choice: ".rjust(22))
 
-        if(choice[0] == '1'):
+        if (choice[0] == '1'):
             gm.start_game()
-        elif(choice[0] == '2'):
+        elif (choice[0] == '2'):
             pm.add_player()
-        elif(choice[0] == '3'):
+        elif (choice[0] == '3'):
             pm.list_players()
-        elif(choice[0] == '4'):
+        elif (choice[0] == '4'):
             pm.remove_player()
-        elif(choice[0] == '5'):
+        elif (choice[0] == '5'):
             gm.list_old_games()
-        elif(choice.upper()[0] == 'X'):
+        elif (choice.upper()[0] == 'X'):
             print("\nBye!")
         else:
             print("\nPlease provide a valid input!")
