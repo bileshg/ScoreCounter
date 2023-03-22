@@ -205,3 +205,85 @@ def display_old_game(game_json_string):
 def save_game(name, scorecard, winners):
     game_to_save = {"name": name, "scorecard": scorecard, "winners": winners}
     db[f'GM-{uuid.uuid1()}'] = json.dumps(game_to_save)
+
+
+def demo_game():
+    print('-' * 35)
+    print("""
+    
+░█▀▄░█▀▀░█▄█░█▀█░░░█▄█░█▀█░█▀▄░█▀▀
+░█░█░█▀▀░█░█░█░█░░░█░█░█░█░█░█░█▀▀
+░▀▀░░▀▀▀░▀░▀░▀▀▀░░░▀░▀░▀▀▀░▀▀░░▀▀▀
+
+Please fork this Repl and  set the 
+DEMO_MODE flag in main.py to False
+to test it out with DB.
+
+The DB does not instantiate if you 
+directly run it.
+    
+    """)
+    print('-' * 35)
+    
+    no_of_players = int(input("\n# of players: ").strip())
+
+    if no_of_players > 1:
+
+        selected_players = []
+        for i in range(no_of_players):
+            name = input(f"\nName of player #{i+1}: ")
+            selected_players.append(name)
+    
+        game = create_game()
+
+        if game is not None:
+            game.start_game(selected_players)
+
+            choice = '0'
+            while choice.upper()[0] != 'X':
+                print("[Game]".center(24, '-'))
+                print("1. New Round")
+                print("2. Scoreboard")
+                print("X. End Game")
+                print('-' * 24)
+
+                choice = input("Your choice: ".rjust(22))
+
+                if (choice[0] == '1'):
+                    game.add_round()
+                    winners = game.check_winner()
+                    if len(winners) == 0:
+                        print("\nThe game goes on...\n")
+                    else:
+                        if len(winners) == 1:
+                            print("\n" + winners[0] +
+                                  " was the winner of this game.")
+                        elif len(winners) == len(game.players):
+                            print("\nWinner undecided...")
+                        else:
+                            print(
+                                '\n{}, and {} were the winners of this game.\n'
+                                .format(', '.join(winners[:-1]), winners[-1]))
+                        choice = 'X'
+                        continue
+
+                elif (choice[0] == '2'):
+                    game.display()
+
+                elif (choice.upper()[0] == 'X'):
+                    winners = game.end_game()
+                    if len(winners) == 0 or len(winners) == len(game.players):
+                        print("\nWinner Undecided...\n")
+                    elif len(winners) == 1:
+                        print(winners[0] + " was the winner of this game.")
+                    else:
+                        print(
+                            '{}, and {} were the winners of this game.'.format(
+                                ', '.join(winners[:-1]), winners[-1]))
+
+        else:
+            print("\nUnable to start a new game!")
+    
+    else:
+        print("\nAt least two players needed!")
+    
