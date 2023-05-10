@@ -7,6 +7,10 @@ import json
 
 class Game:
     def __init__(self, name, highest_wins, max_score, max_rounds):
+        self.data_table = None
+        self.rounds = None
+        self.running_total = None
+        self.players = None
         self.name = name
         self.highest_wins = highest_wins
         self.max_score = max_score
@@ -35,11 +39,11 @@ class Game:
 
             self.data_table = [["Players:"] + self.players]
 
-            for i, round in enumerate(self.rounds, start=1):
-                self.data_table.append([i] + round)
-
+            self.data_table.extend(
+                [i] + round for i, round in enumerate(self.rounds, start=1)
+            )
             self.data_table.append(["Total:"] + self.running_total)
-        except:
+        except Exception:
             print("\nEnter valid scores!")
 
     def get_highest_and_lowest_scores(self):
@@ -59,25 +63,24 @@ class Game:
 
         if len(self.rounds) == self.max_rounds or high_total >= self.max_score:
             score_to_check = high_total if self.highest_wins else low_total
-            winners = []
-            for i, total in enumerate(self.running_total):
-                if total == score_to_check:
-                    winners.append(self.players[i])
-            return winners
+            return [
+                self.players[i]
+                for i, total in enumerate(self.running_total)
+                if total == score_to_check
+            ]
         else:
             return []
 
     def end_game(self):
-        if len(self.rounds) > 0:
-            low_total, high_total = self.get_highest_and_lowest_scores()
-            score_to_check = high_total if self.highest_wins else low_total
-            winners = []
-            for i, total in enumerate(self.running_total):
-                if total == score_to_check:
-                    winners.append(self.players[i])
-            return winners
-        else:
+        if len(self.rounds) <= 0:
             return []
+        low_total, high_total = self.get_highest_and_lowest_scores()
+        score_to_check = high_total if self.highest_wins else low_total
+        return [
+            self.players[i]
+            for i, total in enumerate(self.running_total)
+            if total == score_to_check
+        ]
 
     def display(self):
         table = SingleTable(self.data_table, "Scorecard")
@@ -104,7 +107,7 @@ def list_old_games():
         try:
             i = int(input("Game to view: ".rjust(22))) - 1
             display_old_game(db[games[i]])
-        except:
+        except Exception:
             print("\nPlease provide a valid input!")
     else:
         print("\nNo players added yet!")
@@ -129,7 +132,7 @@ def start_game():
 
                 choice = input("Your choice: ".rjust(22))
 
-                if (choice[0] == '1'):
+                if choice[0] == '1':
                     game.add_round()
                     winners = game.check_winner()
                     if len(winners) == 0:
@@ -143,25 +146,25 @@ def start_game():
                             print("\nWinner undecided...")
                         else:
                             print(
-                                '\n{}, and {} were the winners of this game.\n'
-                                .format(', '.join(winners[:-1]), winners[-1]))
+                                f"\n{', '.join(winners[:-1])}, and {winners[-1]} were the winners of this game.\n"
+                            )
                         choice = 'X'
                         continue
 
-                elif (choice[0] == '2'):
+                elif choice[0] == '2':
                     game.display()
 
-                elif (choice.upper()[0] == 'X'):
+                elif choice.upper()[0] == 'X':
                     winners = game.end_game()
                     save_game(game.name, game.data_table, winners)
-                    if len(winners) == 0 or len(winners) == len(game.players):
+                    if len(winners) in [0, len(game.players)]:
                         print("\nWinner Undecided...\n")
                     elif len(winners) == 1:
-                        print(winners[0] + " was the winner of this game.")
+                        print(f"{winners[0]} was the winner of this game.")
                     else:
                         print(
-                            '{}, and {} were the winners of this game.'.format(
-                                ', '.join(winners[:-1]), winners[-1]))
+                            f"{', '.join(winners[:-1])}, and {winners[-1]} were the winners of this game."
+                        )
 
         else:
             print("\nUnable to start a new game!")
@@ -181,7 +184,7 @@ def create_game():
         max_rounds = int(input("Maximum rounds: "))
         print('-' * 32)
         print("\n")
-    except:
+    except Exception:
         print("\nEnter valid values!")
         return None
 
@@ -198,8 +201,9 @@ def display_old_game(game_json_string):
     if len(game['winners']) == 1:
         print(game['winners'][0] + " was the winner of this game.")
     else:
-        print('{}, and {} were the winners of this game.'.format(
-            ', '.join(game['winners'][:-1]), game['winners'][-1]))
+        print(
+            f"{', '.join(game['winners'][:-1])}, and {game['winners'][-1]} were the winners of this game."
+        )
 
 
 def save_game(name, scorecard, winners):
@@ -224,7 +228,7 @@ directly run it.
     
     """)
     print('-' * 35)
-    
+
     no_of_players = int(input("\n# of players: ").strip())
 
     if no_of_players > 1:
@@ -233,14 +237,14 @@ directly run it.
         for i in range(no_of_players):
             name = input(f"\nName of player #{i+1}: ")
             selected_players.append(name)
-    
+
         game = create_game()
 
         if game is not None:
             game.start_game(selected_players)
 
             choice = '0'
-            while choice.upper()[0] != 'X':
+            while True:
                 print("[Game]".center(24, '-'))
                 print("1. New Round")
                 print("2. Scoreboard")
@@ -249,7 +253,7 @@ directly run it.
 
                 choice = input("Your choice: ".rjust(22))
 
-                if (choice[0] == '1'):
+                if choice[0] == '1':
                     game.add_round()
                     winners = game.check_winner()
                     if len(winners) == 0:
@@ -262,28 +266,28 @@ directly run it.
                             print("\nWinner undecided...")
                         else:
                             print(
-                                '\n{}, and {} were the winners of this game.\n'
-                                .format(', '.join(winners[:-1]), winners[-1]))
-                        choice = 'X'
-                        continue
+                                f"\n{', '.join(winners[:-1])}, and {winners[-1]} were the winners of this game.\n"
+                            )
+                        break
 
-                elif (choice[0] == '2'):
+                elif choice[0] == '2':
                     game.display()
 
-                elif (choice.upper()[0] == 'X'):
+                elif choice.upper()[0] == 'X':
                     winners = game.end_game()
-                    if len(winners) == 0 or len(winners) == len(game.players):
+                    if len(winners) in [0, len(game.players)]:
                         print("\nWinner Undecided...\n")
                     elif len(winners) == 1:
-                        print(winners[0] + " was the winner of this game.")
+                        print(f"{winners[0]} was the winner of this game.")
                     else:
                         print(
-                            '{}, and {} were the winners of this game.'.format(
-                                ', '.join(winners[:-1]), winners[-1]))
+                            f"{', '.join(winners[:-1])}, and {winners[-1]} were the winners of this game."
+                        )
+                    break
 
         else:
             print("\nUnable to start a new game!")
-    
+
     else:
         print("\nAt least two players needed!")
     

@@ -38,7 +38,7 @@ def remove_player():
             players.remove(players[i])
 
             db["players"] = players
-        except:
+        except Exception:
             print("\nPlease provide a valid input!")
     else:
         print("\nNo players added yet!")
@@ -68,7 +68,7 @@ def select_players():
                 else:
                     print("\nPlayer already selected!")
                     i = -1
-        except:
+        except Exception:
             print("\nPlease provide a valid input!")
             return []
     else:
